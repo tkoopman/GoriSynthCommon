@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <Title>Gori's Synthesis Common Library</Title>
+    <Authors>GoriRed</Authors>
+    <PackageId>GoriSynthCommon</PackageId>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Product>Gori's Synthesis Common Library</Product>
+    <Description>Gori's Synthesis Common Library</Description>
+    <AssemblyName>GoriSynthCommon</AssemblyName>
+    <Version>1.0.1</Version>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.49.0" />
+    <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.33.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>
