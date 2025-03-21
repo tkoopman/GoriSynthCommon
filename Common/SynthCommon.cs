@@ -23,9 +23,23 @@ namespace Common
         public static string FixFormKey (string input) => RegexFormKey().Replace(input, m => m.Value.PadLeft(6, '0'));
 
         /// <summary>
+        ///     Is this record context the master
+        /// </summary>
+        public static bool IsMaster (this IModContext<ISkyrimMod, ISkyrimModGetter, IMajorRecord, IMajorRecordGetter> context) => context.ModKey.Equals(context.Record.FormKey.ModKey);
+
+        /// <summary>
         ///     Checks that string meets the requirements for a valid EditorID
         /// </summary>
-        public static bool IsValidEditorID (this string? editorID) => !string.IsNullOrWhiteSpace(editorID) && ValidEditorID().IsMatch(editorID);
+        public static bool IsValidEditorID (this string? editorID, bool allowSomeBadChars = false, char[]? allowedPrefixes = null)
+        {
+            if (string.IsNullOrEmpty(editorID))
+                return false;
+
+            if (allowedPrefixes != null && allowedPrefixes.Contains(editorID[0]))
+                editorID = editorID[1..];
+
+            return allowSomeBadChars ? KindaValidEditorID().IsMatch(editorID) : ValidEditorID().IsMatch(editorID);
+        }
 
         /// <summary>
         ///     Attempts to convert a string to a FormKey or EditorID
@@ -39,16 +53,39 @@ namespace Common
         ///     SkyrimIDType value depending on if input was FormKey or EditorID.
         ///     SkyrimIDType.Invalid if neither.
         /// </returns>
-        public static SkyrimIDType TryConvertToSkyrimID (string input, out FormKey formKey, out string editorID)
+        public static SkyrimIDType TryConvertToSkyrimID (string input, out FormKey formKey, out string editorID) => TryConvertToSkyrimID(input, null, out formKey, out editorID, out _);
+
+        /// <summary>
+        ///     Attempts to convert a string to a FormKey or EditorID
+        /// </summary>
+        /// <param name="input">Input string that is either FormKey or EditorID</param>
+        /// <param name="allowedPrefixes">Allowed prefixes for input</param>
+        /// <param name="formKey">FormKey if return value is SkyrimIDType.FormKey</param>
+        /// <param name="editorID">
+        ///     Null if return value != SkyrimIDType.EditorID, else the EditorID as a string
+        /// </param>
+        /// <param name="prefix">Prefix if input had one</param>
+        /// <returns>
+        ///     SkyrimIDType value depending on if input was FormKey or EditorID.
+        ///     SkyrimIDType.Invalid if neither.
+        /// </returns>
+        public static SkyrimIDType TryConvertToSkyrimID (string input, char[]? allowedPrefixes, out FormKey formKey, out string editorID, out char? prefix)
         {
             editorID = null!;
+            prefix = null;
+
+            if (allowedPrefixes != null && allowedPrefixes.Contains(editorID[0]))
+            {
+                prefix = input[0];
+                input = input[1..];
+            }
 
             if (FormKey.TryFactory(FixFormKey(input), out formKey))
                 return SkyrimIDType.FormKey;
 
             formKey = default;
 
-            if (input.IsValidEditorID())
+            if (input.IsValidEditorID(true))
             {
                 editorID = input;
                 return SkyrimIDType.EditorID;
@@ -101,10 +138,13 @@ namespace Common
             };
         }
 
+        [GeneratedRegex(@"^[a-zA-Z0-9_ ]+$")]
+        private static partial Regex KindaValidEditorID ();
+
         [GeneratedRegex(@"^[0-9A-Fa-f]{1,6}")]
         private static partial Regex RegexFormKey ();
 
-        [GeneratedRegex(@"^[a-zA-Z0-9_]+$")]
+        [GeneratedRegex(@"^[a-zA-Z0-9]+$")]
         private static partial Regex ValidEditorID ();
     }
 }
