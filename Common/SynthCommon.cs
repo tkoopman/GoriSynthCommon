@@ -74,7 +74,7 @@ namespace Common
             editorID = null!;
             prefix = null;
 
-            if (allowedPrefixes != null && allowedPrefixes.Contains(editorID[0]))
+            if (allowedPrefixes != null && allowedPrefixes.Contains(input[0]))
             {
                 prefix = input[0];
                 input = input[1..];
