@@ -27,6 +27,12 @@ namespace Common
             _byValue = new(valueComparer);
         }
 
+        private UVDictionary (Dictionary<TKey, TValue> keys, Dictionary<TValue, TKey> values)
+        {
+            _byKey = keys;
+            _byValue = values;
+        }
+
         public int Count => _byKey.Count;
         public bool IsFixedSize => false;
         public bool IsReadOnly => false;
@@ -35,8 +41,11 @@ namespace Common
         IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => ((IReadOnlyDictionary<TKey, TValue>)_byKey).Keys;
         ICollection IDictionary.Keys => _byKey.Keys;
         object ICollection.SyncRoot => throw new NotImplementedException();
+
         public ICollection<TValue> Values => _byValue.Keys;
+
         IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => ((IReadOnlyDictionary<TKey, TValue>)_byKey).Values;
+
         ICollection IDictionary.Values => _byValue.Values;
 
         object? IDictionary.this[object key]
@@ -100,6 +109,14 @@ namespace Common
 
         IDictionaryEnumerator IDictionary.GetEnumerator () => ((IDictionary)_byKey).GetEnumerator();
 
+        public TKey GetKey (TValue value) => _byValue.TryGetValue(value, out var key)
+                ? key
+                : throw new KeyNotFoundException($"The value '{value}' was not found in the dictionary.");
+
+        public TValue GetValue (TKey key) => _byKey.TryGetValue(key, out var value)
+                ? value
+                : throw new KeyNotFoundException($"The key '{key}' was not found in the dictionary.");
+
         public bool Remove (TKey key)
         {
             if (_byKey.TryGetValue(key, out var value))
@@ -129,6 +146,16 @@ namespace Common
             if (key is TKey _key)
                 _ = Remove(_key);
         }
+
+        /// <summary>
+        ///     Swaps the key and value around. This is useful for reverse lookups when casting to
+        ///     standard Dictionary interfaces.
+        ///
+        ///     NOTE: This doesn't create a clone. Modifying original will modify swapped
+        ///     dictionary.
+        /// </summary>
+        /// <returns>UVDictionary with keys and values swapped.</returns>
+        public UVDictionary<TValue, TKey> Swap () => new(_byValue, _byKey);
 
         public bool TryAdd (TKey key, TValue value)
         {

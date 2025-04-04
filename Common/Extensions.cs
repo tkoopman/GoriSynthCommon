@@ -43,7 +43,7 @@ namespace Common
         };
 
         /// <summary>
-        ///     Adds dictionary to hashCode
+        ///     Adds all keys of dictionary to hashCode
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <param name="hashCode"></param>
@@ -51,10 +51,7 @@ namespace Common
         public static void AddDictionary<TKey> (this HashCode hashCode, IDictionary<TKey, JToken> dictionary)
         {
             foreach (var pair in dictionary)
-            {
                 hashCode.Add(pair.Key);
-                hashCode.Add(pair.Value.ToString());
-            }
         }
 
         /// <summary>
@@ -155,6 +152,59 @@ namespace Common
         /// <param name="input"></param>
         /// <returns></returns>
         public static string SeparateWords (this string input) => InsertSpaces().Replace(input, "$1 ");
+
+        /// <summary>
+        ///     Clones a dictionary. This is a shallow clone, meaning that the keys and values are
+        ///     not cloned.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <returns></returns>
+        public static Dictionary<TKey, TValue> ShallowCopy<TKey, TValue> (this Dictionary<TKey, TValue> dictionary)
+                    where TKey : notnull
+        {
+            ArgumentNullException.ThrowIfNull(dictionary);
+            Dictionary<TKey, TValue> clone = new(dictionary.Count, dictionary.Comparer);
+            foreach (var pair in dictionary)
+                clone.Add(pair.Key, pair.Value);
+
+            return clone;
+        }
+
+        /// <summary>
+        ///     Adds entries from other dictionary to this one. If the key already exists, it will
+        ///     not add it or throw an exception. This is useful for merging dictionaries. Failure
+        ///     to add an entry will not stop it from adding the rest of the entries.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="addTo">Dictionary to add the entries to.</param>
+        /// <param name="addFrom">Dictionary to read the entries to add from.</param>
+        /// <returns>
+        ///     Count of number of entries added. If this equals size of addFrom.Count then all
+        ///     entries were successfully added. If addFrom is null will be 0 same as if addFrom
+        ///     empty or all entries failed to add. -1 returned only if addTo is null.
+        /// </returns>
+        public static int TryAdd<TKey, TValue> (this IDictionary<TKey, TValue> addTo, IDictionary<TKey, TValue>? addFrom)
+                    where TKey : notnull
+        {
+            if (addTo is null)
+                return -1;
+
+            if (addFrom == null)
+                return 0;
+
+            int count = 0;
+
+            foreach (var pair in addFrom)
+            {
+                if (addTo.TryAdd(pair.Key, pair.Value))
+                    count++;
+            }
+
+            return count;
+        }
 
         /// <summary>
         ///     Returns entries that are in source but not in other list. Handles duplicates. If 3
