@@ -25,7 +25,7 @@ namespace Common
         /// <summary>
         ///     Is this record context the master
         /// </summary>
-        public static bool IsMaster (this IModContext<ISkyrimMod, ISkyrimModGetter, IMajorRecord, IMajorRecordGetter> context) => context.ModKey.Equals(context.Record.FormKey.ModKey);
+        public static bool IsMaster (this IModContext<IMajorRecordGetter> context) => context.ModKey.Equals(context.Record.FormKey.ModKey);
 
         /// <summary>
         ///     Checks that string meets the requirements for a valid EditorID
@@ -53,7 +53,7 @@ namespace Common
         ///     SkyrimIDType value depending on if input was FormKey or EditorID.
         ///     SkyrimIDType.Invalid if neither.
         /// </returns>
-        public static SkyrimIDType TryConvertToSkyrimID (string input, out FormKey formKey, out string editorID) => TryConvertToSkyrimID(input, null, out formKey, out editorID, out _);
+        public static IDType TryConvertToSkyrimID (string input, out FormKey formKey, out string editorID) => TryConvertToSkyrimID(input, null, out formKey, out editorID, out _);
 
         /// <summary>
         ///     Attempts to convert a string to a FormKey or EditorID
@@ -69,7 +69,7 @@ namespace Common
         ///     SkyrimIDType value depending on if input was FormKey or EditorID.
         ///     SkyrimIDType.Invalid if neither.
         /// </returns>
-        public static SkyrimIDType TryConvertToSkyrimID (string input, char[]? allowedPrefixes, out FormKey formKey, out string editorID, out char? prefix)
+        public static IDType TryConvertToSkyrimID (string input, char[]? allowedPrefixes, out FormKey formKey, out string editorID, out char? prefix)
         {
             editorID = null!;
             prefix = null;
@@ -81,17 +81,17 @@ namespace Common
             }
 
             if (FormKey.TryFactory(FixFormKey(input), out formKey))
-                return SkyrimIDType.FormKey;
+                return IDType.FormKey;
 
             formKey = default;
 
             if (input.IsValidEditorID(true))
             {
                 editorID = input;
-                return SkyrimIDType.EditorID;
+                return IDType.EditorID;
             }
 
-            return SkyrimIDType.Invalid;
+            return IDType.Invalid;
         }
 
         /// <summary>
@@ -109,8 +109,8 @@ namespace Common
 
             return SynthCommon.TryConvertToSkyrimID(id, out var formKey, out string editorID) switch
             {
-                SkyrimIDType.FormKey => linkCache.TryResolve<T>(formKey, out record),
-                SkyrimIDType.EditorID => linkCache.TryResolve<T>(editorID, out record),
+                IDType.FormKey => linkCache.TryResolve<T>(formKey, out record),
+                IDType.EditorID => linkCache.TryResolve<T>(editorID, out record),
                 _ => false,
             };
         }
@@ -132,8 +132,8 @@ namespace Common
 
             return SynthCommon.TryConvertToSkyrimID(id, out var formKey, out string editorID) switch
             {
-                SkyrimIDType.FormKey => linkCache.TryResolveContext(formKey, out record),
-                SkyrimIDType.EditorID => linkCache.TryResolveContext(editorID, out record),
+                IDType.FormKey => linkCache.TryResolveContext(formKey, out record),
+                IDType.EditorID => linkCache.TryResolveContext(editorID, out record),
                 _ => false,
             };
         }

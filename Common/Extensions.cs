@@ -7,8 +7,15 @@ using Newtonsoft.Json.Linq;
 
 namespace Common
 {
+    /// <summary>
+    ///     My standard method extensions.
+    /// </summary>
     public static partial class Extensions
     {
+        /// <summary>
+        ///     Dictionary of types to friendly display name, used by GetClassName, when type.Name
+        ///     isn't friendly.
+        /// </summary>
         private static readonly Dictionary<Type, string> Aliases = new()
         {
             { typeof(byte), "byte" },
@@ -43,11 +50,9 @@ namespace Common
         };
 
         /// <summary>
-        ///     Adds all keys of dictionary to hashCode
+        ///     Adds dictionary keys to hash code, so two separate dictionaries that have the same
+        ///     keys will have the same hash code.
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="hashCode"></param>
-        /// <param name="dictionary"></param>
         public static void AddDictionary<TKey> (this HashCode hashCode, IDictionary<TKey, JToken> dictionary)
         {
             foreach (var pair in dictionary)
@@ -58,10 +63,7 @@ namespace Common
         ///     Adds entries from other list that don't already exist in source list. Supports where
         ///     multiple entries can exist, making sure source contains at least as many as other
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="other"></param>
-        /// <returns>Count of number of entries actually added to source.</returns>
+        /// <returns>Number of entries actually added to source.</returns>
         public static int AddMissing<T> (this IList<T> source, IEnumerable<T>? other) where T : class
         {
             if (!other.SafeAny())
@@ -93,9 +95,37 @@ namespace Common
         }
 
         /// <summary>
+        ///     Creates new array with new array appended to first array.
+        /// </summary>
+        public static T[] AddRange<T> (this T[] array, IEnumerable<T> values) where T : class
+        {
+            var list = array.ToList();
+            list.AddRange(values);
+            return [.. list];
+        }
+
+        /// <summary>
+        ///     Will explode generic types out, until max depth or generic type has more than 1
+        ///     argument
+        /// </summary>
+        /// <param name="type">The type to explode</param>
+        /// <param name="maxDepth">
+        ///     To limit how deep it goes. Once it reaches this depth it will return remaining
+        ///     unexploded as final entry in array. Value of 0 = no limit. Value of 1 will just
+        ///     return input type as only array member.
+        /// </param>
+        /// <returns>
+        ///     Array of types. If input type not generic then result will be array with single
+        ///     value of the input type.
+        /// </returns>
+        /// <example>
+        ///     typeof(List&lt;string&lt;).Explode() == [typeof(List&lt;&lt;), typeof(string)]
+        /// </example>
+        public static Type[] Explode (this Type type, int maxDepth = 0) => doExplode(type, maxDepth, 1);
+
+        /// <summary>
         ///     Prints class name in readable format even if generic type
         /// </summary>
-        /// <param name="type"></param>
         /// <returns>String of class name.</returns>
         public static string GetClassName (this Type? type)
         {
@@ -130,6 +160,12 @@ namespace Common
         /// <returns></returns>
         public static bool IsNullable (this Type type) => type.GetIfGenericTypeDefinition() == typeof(Nullable<>);
 
+        /// <summary>
+        ///     If type is Nullable will return the inner type, else just returns the type
+        ///     unchanged.
+        /// </summary>
+        /// <param name="type">Possible nullable type</param>
+        /// <returns>Non nullable type</returns>
         public static Type RemoveNullable (this Type type) => type.GetIfGenericTypeDefinition() == typeof(Nullable<>) ? type.GetIfUnderlyingType() ?? throw new Exception("WTF - This not meant to happen") : type;
 
         /// <summary>
@@ -229,6 +265,17 @@ namespace Common
                 _ = list.Remove(ni);
 
             return list;
+        }
+
+        private static Type[] doExplode (Type type, int maxDepth, int depth)
+        {
+            if (maxDepth == depth || !type.IsGenericType || type.IsGenericTypeDefinition || type.GetGenericArguments().Length != 1)
+                return [type];
+
+            List<Type> list = [type.GetGenericTypeDefinition()];
+            list.AddRange(doExplode(type.GetGenericArguments()[0], maxDepth, ++depth));
+
+            return [.. list];
         }
 
         [GeneratedRegex("([a-z](?=[A-Z])|[A-Z](?=[A-Z][a-z]))")]

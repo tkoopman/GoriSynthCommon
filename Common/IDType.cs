@@ -1,6 +1,6 @@
 ﻿namespace Common
 {
-    public enum SkyrimIDType
+    public enum IDType
     {
         Invalid = 0,
         FormKey = 1,
