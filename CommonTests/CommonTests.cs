@@ -1,9 +1,31 @@
 using Common;
+using Common.JsonConverters;
+
+using Loqui;
+
+using Newtonsoft.Json;
 
 namespace CommonTests
 {
     public class CommonTests
     {
+        [Theory]
+        [ClassData(typeof(TranslationMaskConverter_TestData))]
+        public void TranslationMaskConverter_Tests (string json, ITranslationMask expected)
+        {
+            var converter = new TranslationMaskConverter();
+
+            // Test boolean input
+            object? mask = JsonConvert.DeserializeObject(json, expected.GetType(),
+                new JsonSerializerSettings()
+                {
+                    Converters = [converter],
+                }
+                );
+
+            Assert.Equal(expected, mask as ITranslationMask, new TranslationMaskConverter_Comparer());
+        }
+
         [Fact]
         public void UVDictionary_BasicTests ()
         {
