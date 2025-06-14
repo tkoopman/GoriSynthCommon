@@ -150,14 +150,15 @@ namespace Common
         ///     If type is generic and underlying type exists at index, returns that underlying
         ///     type, else returns null
         /// </summary>
+        /// <param name="type">The type to check.</param>
         /// <param name="index">Underlying Type Index</param>
         public static Type? GetIfUnderlyingType (this Type type, int index = 0) => type.IsGenericType && !type.IsGenericTypeDefinition && type.GetGenericArguments().Length > index ? type.GetGenericArguments()[index] : null;
 
         /// <summary>
         ///     Checks if type is Nullable
         /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <param name="type">The type to check.</param>
+        /// <returns>True if implements Nullable&lt;&gt;</returns>
         public static bool IsNullable (this Type type) => type.GetIfGenericTypeDefinition() == typeof(Nullable<>);
 
         /// <summary>

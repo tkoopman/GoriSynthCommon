@@ -6,12 +6,19 @@ using Noggog;
 
 namespace Common.JsonConverters
 {
+    /// <summary>
+    ///     Converts a <see cref="Percent" /> from JSON. Percent can be represented as a double (0.0
+    ///     to 1.0) or a string with a percent sign (e.g., "50%").
+    /// </summary>
     public class PercentConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanWrite => false;
 
+        /// <inheritdoc />
         public override bool CanConvert (Type objectType) => objectType == typeof(Percent);
 
+        /// <inheritdoc />
         public override object? ReadJson (JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             switch (reader.TokenType)
@@ -38,6 +45,7 @@ namespace Common.JsonConverters
             }
         }
 
+        /// <inheritdoc />
         public override void WriteJson (JsonWriter writer, object? value, JsonSerializer serializer) => throw new NotImplementedException();
     }
 }
