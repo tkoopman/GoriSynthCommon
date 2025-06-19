@@ -181,7 +181,7 @@ namespace Common
         ///     ArgumentNullException if null.
         /// </summary>
         /// <returns>False if null else result of .Any()</returns>
-        public static bool SafeAny<TSource> (this IEnumerable<TSource>? source, Func<TSource, bool> predicate) => source != null && source.Any(predicate);
+        public static bool SafeAny<TSource> ([NotNullWhen(true)] this IEnumerable<TSource>? source, Func<TSource, bool> predicate) => source != null && source.Any(predicate);
 
         /// <summary>
         ///     Camel case to normal words
