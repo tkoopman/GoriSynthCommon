@@ -82,7 +82,7 @@ namespace Common
             foreach (var o in otherGrouped)
             {
                 var s = sourceGrouped.FirstOrDefault(i => o.Value.Equals(i.Value));
-                int add = s != null ? o.Count - s.Count : o.Count;
+                int add = s is not null ? o.Count - s.Count : o.Count;
 
                 for (int i = add; i > 0; i--)
                 {
@@ -95,7 +95,7 @@ namespace Common
         }
 
         /// <summary>
-        ///     Creates new array with new array appended to first array.
+        ///     Creates new array with second array appended to first array.
         /// </summary>
         public static T[] AddRange<T> (this T[] array, IEnumerable<T> values) where T : class
         {
@@ -162,6 +162,19 @@ namespace Common
         public static bool IsNullable (this Type type) => type.GetIfGenericTypeDefinition() == typeof(Nullable<>);
 
         /// <summary>
+        ///     Returns enumerable of lines in string, splitting on new line characters.
+        /// </summary>
+        public static IEnumerable<string> Lines (this string source)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+
+            using var reader = new StringReader(source);
+
+            while (reader.ReadLine() is { } line)
+                yield return line;
+        }
+
+        /// <summary>
         ///     If type is Nullable will return the inner type, else just returns the type
         ///     unchanged.
         /// </summary>
@@ -184,10 +197,10 @@ namespace Common
         public static bool SafeAny<TSource> ([NotNullWhen(true)] this IEnumerable<TSource>? source, Func<TSource, bool> predicate) => source != null && source.Any(predicate);
 
         /// <summary>
-        ///     Camel case to normal words
+        ///     Pascal / Camel case to normal words
         /// </summary>
         /// <param name="input"></param>
-        /// <returns></returns>
+        /// <returns>New string with spaces added between words. Case not changed.</returns>
         public static string SeparateWords (this string input) => InsertSpaces().Replace(input, "$1 ");
 
         /// <summary>
