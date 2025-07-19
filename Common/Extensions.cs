@@ -197,6 +197,34 @@ namespace Common
         public static bool SafeAny<TSource> ([NotNullWhen(true)] this IEnumerable<TSource>? source, Func<TSource, bool> predicate) => source != null && source.Any(predicate);
 
         /// <summary>
+        ///     Same as IEnumerable.SequenceEqual() but handles nulls gracefully. <br />
+        ///
+        ///     null != []
+        /// </summary>
+        /// <inheritdoc cref="Enumerable.SequenceEqual{TSource}(IEnumerable{TSource}, IEnumerable{TSource}, IEqualityComparer{TSource}?)" />
+        [SuppressMessage("Style", "IDE0046:Convert to conditional expression", Justification = "Readability")]
+        public static bool SafeSequenceEqual<TSource> (this IEnumerable<TSource>? first, IEnumerable<TSource>? second, IEqualityComparer<TSource>? comparer = null)
+        {
+            if (first is null && second is null)
+                return true;
+
+            if (first is null || second is null)
+                return false;
+
+            return Enumerable.SequenceEqual(first, second, comparer);
+        }
+
+        /// <summary>
+        ///     Same as IEnumerable.SequenceEqual() but handles nulls gracefully. <br />
+        ///
+        ///     null == []
+        /// </summary>
+        /// <inheritdoc cref="Enumerable.SequenceEqual{TSource}(IEnumerable{TSource}, IEnumerable{TSource}, IEqualityComparer{TSource}?)" />
+        public static bool SafeSequenceEqualNullEmpty<TSource> (this IEnumerable<TSource>? first, IEnumerable<TSource>? second, IEqualityComparer<TSource>? comparer = null)
+            => (first is null && second is null)
+            || Enumerable.SequenceEqual(first ?? [], second ?? [], comparer);
+
+        /// <summary>
         ///     Pascal / Camel case to normal words
         /// </summary>
         /// <param name="input"></param>

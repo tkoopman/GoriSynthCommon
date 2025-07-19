@@ -32,6 +32,24 @@ namespace CommonTests
         }
 
         [Theory]
+        [InlineData(new[] { 1, 2, 3 }, new[] { 1, 2, 3 }, true)]
+        [InlineData(new[] { 1, 2, 3 }, null, false)]
+        [InlineData(null, new[] { 1, 2, 3 }, false)]
+        [InlineData(null, null, true)]
+        [InlineData(null, new int[] { }, false)]
+        [InlineData(new string[] { }, null, false)]
+        public void Test_SafeSequenceEqual<T> (T[]? first, T[]? second, bool expected) => Assert.Equal(expected, first.SafeSequenceEqual(second));
+
+        [Theory]
+        [InlineData(new[] { 1, 2, 3 }, new[] { 1, 2, 3 }, true)]
+        [InlineData(new[] { 1, 2, 3 }, null, false)]
+        [InlineData(null, new[] { 1, 2, 3 }, false)]
+        [InlineData(null, null, true)]
+        [InlineData(null, new int[] { }, true)]
+        [InlineData(new string[] { }, null, true)]
+        public void Test_SafeSequenceEqualNullEmpty<T> (T[]? first, T[]? second, bool expected) => Assert.Equal(expected, first.SafeSequenceEqualNullEmpty(second));
+
+        [Theory]
         [InlineData("thisIsAString", "this Is A String")]
         [InlineData("ThisIsAString", "This Is A String")]
         [InlineData("ThisIsAString followed by more text. letsGo!", "This Is A String followed by more text. lets Go!")]
