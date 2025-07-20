@@ -50,39 +50,36 @@ namespace Common
             if (allowedPrefixes != null && allowedPrefixes.Contains(editorID[0]))
                 editorID = editorID[1..];
 
-            return allowSomeBadChars ? KindaValidEditorID().IsMatch(editorID) : ValidEditorID().IsMatch(editorID);
+            return allowSomeBadChars ? EditorIDAcceptable().IsMatch(editorID) : EditorIDValid().IsMatch(editorID);
         }
 
-        /// <summary>
-        ///     Attempts to convert a string to a FormKey or EditorID
-        /// </summary>
-        /// <param name="input">Input string that is either FormKey or EditorID</param>
-        /// <param name="formKey">FormKey if return value is IDType.FormKey</param>
-        /// <param name="editorID">
-        ///     Null if return value != SkyrimIDType.EditorID, else the EditorID as a string
-        /// </param>
-        /// <returns>
-        ///     SkyrimIDType value depending on if input was FormKey or EditorID.
-        ///     SkyrimIDType.Invalid if neither.
-        /// </returns>
+        /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out FormID, out FormKey, out string, out char?)" />
         public static IDType TryConvertToBethesdaID (string input, out FormKey formKey, out string editorID) => TryConvertToBethesdaID(input, null, out formKey, out editorID, out _);
+
+        /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out FormID, out FormKey, out string, out char?)" />
+        public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out FormKey formKey, out string editorID, out char? prefix) => TryConvertToBethesdaID(input, allowedPrefixes, out _, out formKey, out editorID, out prefix);
+
+        /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out FormID, out FormKey, out string, out char?)" />
+        public static IDType TryConvertToBethesdaID (string input, out FormID formID, out FormKey formKey, out string editorID) => TryConvertToBethesdaID(input, null, out formID, out formKey, out editorID, out _);
 
         /// <summary>
         ///     Attempts to convert a string to a FormKey or EditorID
         /// </summary>
         /// <param name="input">Input string that is either FormKey or EditorID</param>
         /// <param name="allowedPrefixes">Allowed prefixes for input</param>
-        /// <param name="formKey">FormKey if return value is SkyrimIDType.FormKey</param>
+        /// <param name="formID">FormID if return value is IDType.FormID</param>
+        /// <param name="formKey">FormKey if return value is IDType.FormKey</param>
         /// <param name="editorID">
-        ///     Null if return value != SkyrimIDType.EditorID, else the EditorID as a string
+        ///     Null if return value != IDType.EditorID, else the EditorID as a string
         /// </param>
         /// <param name="prefix">Prefix if input had one</param>
         /// <returns>
-        ///     SkyrimIDType value depending on if input was FormKey or EditorID.
-        ///     SkyrimIDType.Invalid if neither.
+        ///     IDType value depending on if input was FormID, FormKey or EditorID. IDType.Invalid
+        ///     if nothing valid found.
         /// </returns>
-        public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out FormKey formKey, out string editorID, out char? prefix)
+        public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out FormID formID, out FormKey formKey, out string editorID, out char? prefix)
         {
+            formKey = FormKey.Null;
             editorID = null!;
             prefix = null;
 
@@ -92,10 +89,19 @@ namespace Common
                 input = input[1..];
             }
 
+            if (FormID.TryFactory(input, out formID))
+                return IDType.FormID;
+
             if (FormKey.TryFactory(FixFormKey(input), out formKey))
                 return IDType.FormKey;
 
-            formKey = default;
+            if (ModKey.TryFromNameAndExtension(input, out var modKey))
+            {
+                formKey = new FormKey(modKey, 0xFFFFFF);
+                return IDType.ModID;
+            }
+
+            formKey = FormKey.Null;
 
             if (input.IsValidEditorID(true))
             {
@@ -170,13 +176,17 @@ namespace Common
             return registration is not null;
         }
 
+        /// <summary>
+        ///     Going by https://en.uesp.net/wiki/Skyrim_Mod:SkyEdit/User_Interface/Common_Fields
+        ///     should not include space or underscores, but seems to be used sometimes.
+        /// </summary>
         [GeneratedRegex(@"^[a-zA-Z0-9_ ]+$")]
-        private static partial Regex KindaValidEditorID ();
+        private static partial Regex EditorIDAcceptable ();
+
+        [GeneratedRegex(@"^[a-zA-Z0-9]+$")]
+        private static partial Regex EditorIDValid ();
 
         [GeneratedRegex(@"^[0-9A-Fa-f]{1,6}")]
         private static partial Regex RegexFormKey ();
-
-        [GeneratedRegex(@"^[a-zA-Z0-9]+$")]
-        private static partial Regex ValidEditorID ();
     }
 }
