@@ -20,12 +20,12 @@
         /// <summary>
         ///     Mod ID Only, no FormID provided.
         /// </summary>
-        ModID = 1 << 1,
+        ModKey = 1 << 1,
 
         /// <summary>
         ///     Value provided was a valid FormKey.
         /// </summary>
-        FormKey = FormID | ModID,
+        FormKey = FormID | ModKey,
 
         /// <summary>
         ///     Value provided was a valid EditorID.

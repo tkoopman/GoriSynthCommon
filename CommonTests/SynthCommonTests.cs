@@ -52,7 +52,7 @@ namespace CommonTests
                 };
                 yield return new object?[]
                 {
-                    "Skyrim.esm", null, IDType.ModID, default, new FormKey("Skyrim.esm", 0xFFFFFF), null, null
+                    "Skyrim.esm", null, IDType.ModKey, default, new FormKey("Skyrim.esm", 0xFFFFFF), null, null
                 };
                 yield return new object?[]
                 {   // Not a valid file extension, so not a valid ModKey, but also not EditorID as contains period (.)

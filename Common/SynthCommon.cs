@@ -54,13 +54,69 @@ namespace Common
         }
 
         /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out FormID, out FormKey, out string, out char?)" />
+        [Obsolete("Use TryConvertToBethesdaID with RecordID instead.")]
         public static IDType TryConvertToBethesdaID (string input, out FormKey formKey, out string editorID) => TryConvertToBethesdaID(input, null, out formKey, out editorID, out _);
 
         /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out FormID, out FormKey, out string, out char?)" />
+        [Obsolete("Use TryConvertToBethesdaID with RecordID instead.")]
         public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out FormKey formKey, out string editorID, out char? prefix) => TryConvertToBethesdaID(input, allowedPrefixes, out _, out formKey, out editorID, out prefix);
 
         /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out FormID, out FormKey, out string, out char?)" />
+        [Obsolete("Use TryConvertToBethesdaID with RecordID instead.")]
         public static IDType TryConvertToBethesdaID (string input, out FormID formID, out FormKey formKey, out string editorID) => TryConvertToBethesdaID(input, null, out formID, out formKey, out editorID, out _);
+
+        /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out RecordID, out char?)" />
+        public static IDType TryConvertToBethesdaID (string input, out RecordID id) => TryConvertToBethesdaID(input, null, out id, out _);
+
+        /// <summary>
+        ///     Attempts to convert a string to a RecordID.
+        /// </summary>
+        /// <param name="input">Input string that is either FormKey or EditorID</param>
+        /// <param name="allowedPrefixes">Allowed prefixes for input</param>
+        /// <param name="id">
+        ///     Record ID. Use <see cref="RecordID.Type" /> to see what type of ID.
+        /// </param>
+        /// <param name="prefix">Prefix if input had one</param>
+        /// <returns><see cref="RecordID.Type" /> for easy switch statements.</returns>
+        public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out RecordID id, out char? prefix)
+        {
+            if (allowedPrefixes != null && allowedPrefixes.Contains(input[0]))
+            {
+                prefix = input[0];
+                input = input[1..];
+            }
+            else
+            {
+                prefix = null;
+            }
+
+            if (FormID.TryFactory(input, out var formID))
+            {
+                id = formID;
+                return id.Type;
+            }
+
+            if (FormKey.TryFactory(FixFormKey(input), out var formKey))
+            {
+                id = formKey;
+                return id.Type;
+            }
+
+            if (ModKey.TryFromNameAndExtension(input, out var modKey))
+            {
+                id = modKey;
+                return id.Type;
+            }
+
+            if (input.IsValidEditorID(true))
+            {
+                id = new RecordID(input);
+                return id.Type;
+            }
+
+            id = new RecordID(IDType.Invalid, input);
+            return IDType.Invalid;
+        }
 
         /// <summary>
         ///     Attempts to convert a string to a FormKey or EditorID
@@ -77,39 +133,41 @@ namespace Common
         ///     IDType value depending on if input was FormID, FormKey or EditorID. IDType.Invalid
         ///     if nothing valid found.
         /// </returns>
+        [Obsolete("Use TryConvertToBethesdaID with RecordID instead.")]
         public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out FormID formID, out FormKey formKey, out string editorID, out char? prefix)
         {
-            formKey = FormKey.Null;
-            editorID = null!;
-            prefix = null;
-
-            if (allowedPrefixes != null && allowedPrefixes.Contains(input[0]))
+            switch (TryConvertToBethesdaID(input, allowedPrefixes, out var id, out prefix))
             {
-                prefix = input[0];
-                input = input[1..];
+                case IDType.FormID:
+                    formID = id.FormID;
+                    formKey = default;
+                    editorID = null!;
+                    return IDType.FormID;
+
+                case IDType.FormKey:
+                    formID = FormID.Null;
+                    formKey = id.FormKey;
+                    editorID = null!;
+                    return IDType.FormKey;
+
+                case IDType.ModKey:
+                    formID = FormID.Null;
+                    formKey = new FormKey(id.ModKey, 0xFFFFFF);
+                    editorID = null!;
+                    return IDType.ModKey;
+
+                case IDType.EditorID:
+                    formID = FormID.Null;
+                    formKey = FormKey.Null;
+                    editorID = id.EditorID;
+                    return IDType.EditorID;
+
+                default:
+                    formID = FormID.Null;
+                    formKey = FormKey.Null;
+                    editorID = null!;
+                    return IDType.Invalid;
             }
-
-            if (FormID.TryFactory(input, out formID))
-                return IDType.FormID;
-
-            if (FormKey.TryFactory(FixFormKey(input), out formKey))
-                return IDType.FormKey;
-
-            if (ModKey.TryFromNameAndExtension(input, out var modKey))
-            {
-                formKey = new FormKey(modKey, 0xFFFFFF);
-                return IDType.ModID;
-            }
-
-            formKey = FormKey.Null;
-
-            if (input.IsValidEditorID(true))
-            {
-                editorID = input;
-                return IDType.EditorID;
-            }
-
-            return IDType.Invalid;
         }
 
         /// <summary>
@@ -125,10 +183,10 @@ namespace Common
         {
             record = null;
 
-            return TryConvertToBethesdaID(id, out var formKey, out string editorID) switch
+            return TryConvertToBethesdaID(id, out var recordID) switch
             {
-                IDType.FormKey => linkCache.TryResolve<T>(formKey, out record),
-                IDType.EditorID => linkCache.TryResolve<T>(editorID, out record),
+                IDType.FormKey => linkCache.TryResolve<T>(recordID.FormKey, out record),
+                IDType.EditorID => linkCache.TryResolve<T>(recordID.EditorID, out record),
                 _ => false,
             };
         }
@@ -149,10 +207,10 @@ namespace Common
         {
             record = null;
 
-            return TryConvertToBethesdaID(id, out var formKey, out string editorID) switch
+            return TryConvertToBethesdaID(id, out var recordID) switch
             {
-                IDType.FormKey => linkCache.TryResolveContext(formKey, out record),
-                IDType.EditorID => linkCache.TryResolveContext(editorID, out record),
+                IDType.FormKey => linkCache.TryResolveContext(recordID.FormKey, out record),
+                IDType.EditorID => linkCache.TryResolveContext(recordID.EditorID, out record),
                 _ => false,
             };
         }
