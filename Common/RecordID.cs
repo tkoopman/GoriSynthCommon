@@ -1,6 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Records;
 
 namespace Common
 {
@@ -10,7 +12,8 @@ namespace Common
     ///     before calling the property ID it references as calling properties for incorrect types
     ///     will throw exceptions.
     /// </summary>
-    public readonly struct RecordID
+    [DebuggerDisplay("{DebuggerDisplay,nq}")]
+    public readonly struct RecordID : IEquatable<IMajorRecord>
     {
         /// <summary>
         ///     Initializes a new instance where IDType is either <see cref="IDType.EditorID" /> or
@@ -127,6 +130,17 @@ namespace Common
         /// </summary>
         public IDType Type { get; }
 
+        private string DebuggerDisplay
+            => Type switch
+            {
+                IDType.EditorID => $"EditorID: {EditorID}",
+                IDType.FormID => $"FormID: 0x{FormID}",
+                IDType.FormKey => $"FormKey: {FormKey}",
+                IDType.ModKey => $"ModKey: {ModKey}",
+                IDType.Invalid => $"Invalid: {Invalid ?? "null"}",
+                _ => "Unknown RecordID type.",
+            };
+
         /// <summary>
         ///     Implicitly converts a RecordID to its IDType.
         /// </summary>
@@ -169,6 +183,25 @@ namespace Common
         public bool Equals (RecordID obj)
             => Type == obj.Type
             && Equals(RawID, obj.RawID);
+
+        /// <summary>
+        ///     Checks if the current RecordID is equal to another IMajorRecord.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns>
+        ///     Returns false if RecordID Type is FormID or Invalid. Else will compare EditorID,
+        ///     FormKey or ModKey value with IMajorRecord based on RecordID.Type
+        /// </returns>
+        public bool Equals (IMajorRecord? other)
+            => other is not null && Type switch
+            {
+                IDType.EditorID => other.EditorID?.Equals(EditorID, StringComparison.OrdinalIgnoreCase) ?? false,
+                IDType.FormID => false,
+                IDType.FormKey => other.FormKey == FormKey,
+                IDType.ModKey => other.FormKey.ModKey == ModKey,
+                IDType.Invalid => false,
+                _ => false,
+            };
 
         /// <inheritdoc />
         public override int GetHashCode () => RawID?.GetHashCode() ?? 0;

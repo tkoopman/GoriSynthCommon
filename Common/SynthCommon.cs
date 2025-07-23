@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -25,7 +26,7 @@ namespace Common
         /// <returns>
         ///     String representation of the form key with 0 padding added if required.
         /// </returns>
-        public static string FixFormKey (string input) => RegexFormKey().Replace(input, m => m.Value.PadLeft(6, '0'));
+        public static string FixFormKey (string input) => FormIDRegex().Replace(input, m => m.Value.PadLeft(6, '0'));
 
         /// <summary>
         ///     Returns the static registration for the given type if it exists.
@@ -65,20 +66,38 @@ namespace Common
         [Obsolete("Use TryConvertToBethesdaID with RecordID instead.")]
         public static IDType TryConvertToBethesdaID (string input, out FormID formID, out FormKey formKey, out string editorID) => TryConvertToBethesdaID(input, null, out formID, out formKey, out editorID, out _);
 
-        /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], out RecordID, out char?)" />
-        public static IDType TryConvertToBethesdaID (string input, out RecordID id) => TryConvertToBethesdaID(input, null, out id, out _);
+        /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], Func{FormID, FormKey}?, out RecordID, out char?)" />
+        public static IDType TryConvertToBethesdaID (string input, out RecordID id) => TryConvertToBethesdaID(input, null, null, out id, out _);
+
+        /// <inheritdoc cref="TryConvertToBethesdaID(string, char[], Func{FormID, FormKey}?, out RecordID, out char?)" />
+        public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out RecordID recordID, out char? prefix) => TryConvertToBethesdaID(input, allowedPrefixes, null, out recordID, out prefix);
 
         /// <summary>
-        ///     Attempts to convert a string to a RecordID.
+        ///     Attempts to convert a string to a RecordID. Supported formats are:
+        ///     - FormKey: 6 Hex Digits Form ID and Mod filename including extension with either
+        ///     colon (:) or tilde (~) as separator. Optional "0x" allowed to start FormID, also
+        ///     leading 0s are optional. ("456:Skyrim.esm", "0x000456~Skyrim.esm")
+        ///     - FormID: 8 Hex Digits with optional "0x" at the start. Leading 0s MUST be included.
+        ///     - ModKey: Mod filename including extension.
+        ///     - EditorID: String that is valid EditorID
+        ///     - Invalid: Anything else that does not match the above formats.
+        ///
+        ///     NOTE: Just because this method supports the above formats doesn't mean everything
+        ///     that uses them does as well.
         /// </summary>
         /// <param name="input">Input string that is either FormKey or EditorID</param>
         /// <param name="allowedPrefixes">Allowed prefixes for input</param>
-        /// <param name="id">
+        /// <param name="convertToFormKey">
+        ///     Method to convert FormID to FormKey. If provided and result != FormKey.Null will
+        ///     return FormKey RecordID instead.
+        /// </param>
+        /// <param name="recordID">
         ///     Record ID. Use <see cref="RecordID.Type" /> to see what type of ID.
         /// </param>
         /// <param name="prefix">Prefix if input had one</param>
         /// <returns><see cref="RecordID.Type" /> for easy switch statements.</returns>
-        public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out RecordID id, out char? prefix)
+
+        public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, Func<FormID, FormKey>? convertToFormKey, out RecordID recordID, out char? prefix)
         {
             if (allowedPrefixes != null && allowedPrefixes.Contains(input[0]))
             {
@@ -90,31 +109,54 @@ namespace Common
                 prefix = null;
             }
 
+            ModKey modKey;
+
+            var match = FormKeyRegex().Match(input);
+            if (match.Success)
+            {
+                if (!uint.TryParse(match.Groups["id"].Value, NumberStyles.HexNumber, null, out uint id) ||
+                    !ModKey.TryConvertExtensionToType(match.Groups["modExt"].Value, out var modType) ||
+                    !ModKey.TryFromName(match.Groups["modName"].Value, modType, out modKey))
+                {
+                    recordID = new RecordID(IDType.Invalid, input);
+                    return IDType.Invalid;
+                }
+
+                recordID = new FormKey(modKey, id);
+                return IDType.FormKey;
+            }
+
             if (FormID.TryFactory(input, out var formID))
             {
-                id = formID;
-                return id.Type;
+                recordID = formID;
+
+                // If FormID to FormKey function provided, try to convert FormID to FormKey
+                if (convertToFormKey is not null)
+                {
+                    var formKey = convertToFormKey(formID);
+                    if (!formKey.IsNull)
+                    {
+                        recordID = formKey;
+                        return IDType.FormKey;
+                    }
+                }
+
+                return IDType.FormID;
             }
 
-            if (FormKey.TryFactory(FixFormKey(input), out var formKey))
+            if (ModKey.TryFromNameAndExtension(input, out modKey))
             {
-                id = formKey;
-                return id.Type;
-            }
-
-            if (ModKey.TryFromNameAndExtension(input, out var modKey))
-            {
-                id = modKey;
-                return id.Type;
+                recordID = modKey;
+                return IDType.ModKey;
             }
 
             if (input.IsValidEditorID(true))
             {
-                id = new RecordID(input);
-                return id.Type;
+                recordID = new RecordID(input);
+                return IDType.EditorID;
             }
 
-            id = new RecordID(IDType.Invalid, input);
+            recordID = new RecordID(IDType.Invalid, input);
             return IDType.Invalid;
         }
 
@@ -136,7 +178,7 @@ namespace Common
         [Obsolete("Use TryConvertToBethesdaID with RecordID instead.")]
         public static IDType TryConvertToBethesdaID (string input, char[]? allowedPrefixes, out FormID formID, out FormKey formKey, out string editorID, out char? prefix)
         {
-            switch (TryConvertToBethesdaID(input, allowedPrefixes, out var id, out prefix))
+            switch (TryConvertToBethesdaID(input, allowedPrefixes, null, out var id, out prefix))
             {
                 case IDType.FormID:
                     formID = id.FormID;
@@ -245,6 +287,9 @@ namespace Common
         private static partial Regex EditorIDValid ();
 
         [GeneratedRegex(@"^[0-9A-Fa-f]{1,6}")]
-        private static partial Regex RegexFormKey ();
+        private static partial Regex FormIDRegex ();
+
+        [GeneratedRegex(@"^(?:0x)?(?'id'[0-9A-Fa-f]{1,6})[:~](?'modName'[^*\\|:""<>?\/\x00-\x1F]+)\.(?'modExt'[eE][sS][mMpPlL])$")]
+        private static partial Regex FormKeyRegex ();
     }
 }
