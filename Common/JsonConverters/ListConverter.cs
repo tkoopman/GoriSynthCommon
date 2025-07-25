@@ -48,22 +48,6 @@ namespace Common.JsonConverters
         /// <inheritdoc />
         public override object? ReadJson (JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
-            //List<T> value = reader.TokenType switch
-            //{
-            //    JsonToken.Null => [],
-            //    JsonToken.StartArray => [.. serializer.Deserialize<IEnumerable<T>>(reader) ?? throw new JsonSerializationException("Unable to parse object.")],
-            //    JsonToken.StartObject => [serializer.Deserialize<T>(reader) ?? throw new JsonSerializationException("Unable to parse object.")],
-            //    JsonToken.String => [serializer.Deserialize<T>(reader) ?? throw new JsonSerializationException("Unable to parse object.")],
-            //    _ => throw new JsonSerializationException($"Invalid Json object - {reader.TokenType}")
-            //};
-
-            bool isNullable = false;
-            var checkType = objectType.IsArray ? objectType.BaseType : objectType;
-            if (checkType.GetCustomAttributes(typeof(System.Runtime.CompilerServices.NullableContextAttribute), false).Length > 0)
-            {
-                isNullable = true;
-            }
-
             switch (reader.TokenType)
             {
                 case JsonToken.Null:
@@ -75,8 +59,7 @@ namespace Common.JsonConverters
                     {
                         if (reader.TokenType == JsonToken.Null)
                         {
-                            if (isNullable)
-                                value.Add(default!);
+                            value.Add(default!);
                             continue;
                         }
 
