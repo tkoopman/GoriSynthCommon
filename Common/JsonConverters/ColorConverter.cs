@@ -13,13 +13,12 @@ namespace Common.JsonConverters
     ///     values to and from JSON. Supported formats:
     ///
     ///     - String: The name of the color (e.g., "Red", "Blue", etc.) or a ARGB hex value (e.g.,
-    ///       "#FF0000" of "#FFFF0000" for red).
+    ///     "#FF0000" of "#FFFF0000" for red).
     ///     - Integer: The ARGB value as an integer (e.g., -65536 for red).
     ///     - Array: An array of integers representing the color components, either [R, G, B] or [A,
-    ///       R, G, B]. (e.g., [255, 0, 0] or [255, 255, 0, 0] for red).
+    ///     R, G, B]. (e.g., [255, 0, 0] or [255, 255, 0, 0] for red).
     /// </summary>
-    /// <param name="writeAs">When writing color which format to use.</param>
-    public partial class ColorConverter (WriteAs writeAs = WriteAs.String) : JsonConverter
+    public partial class ColorConverter : JsonConverter
     {
         /// <summary>
         ///     What JSON type to write the flags as.
@@ -32,7 +31,7 @@ namespace Common.JsonConverters
             Array,
 
             /// <summary>
-            ///     Use ToString() on the enum value.
+            ///     Use as known color or HEX string.
             /// </summary>
             String,
 
@@ -45,7 +44,7 @@ namespace Common.JsonConverters
         /// <summary>
         ///     What JSON type to write as.
         /// </summary>
-        public WriteAs WriteAsType { get; set; } = writeAs;
+        public WriteAs WriteAsType { get; set; } = WriteAs.String;
 
         /// <inheritdoc />
         public override bool CanConvert (Type objectType) => objectType == typeof(Color);

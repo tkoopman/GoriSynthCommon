@@ -2,14 +2,12 @@ using System.Reflection;
 
 using Newtonsoft.Json;
 
-using static Common.JsonConverters.FlagConverter;
-
 namespace Common.JsonConverters
 {
     /// <summary>
     ///     Converts Enum values with Flag attributes from JSON
     /// </summary>
-    public class FlagConverter (WriteAs writeAs = WriteAs.String) : JsonConverter
+    public class FlagConverter : JsonConverter
     {
         /// <summary>
         ///     What JSON type to write the flags as.
@@ -35,7 +33,7 @@ namespace Common.JsonConverters
         /// <summary>
         ///     What JSON type to write as.
         /// </summary>
-        public WriteAs WriteAsType { get; set; } = writeAs;
+        public WriteAs WriteAsType { get; set; } = WriteAs.String;
 
         /// <inheritdoc />
         public override bool CanConvert (Type objectType) => objectType.IsEnum && objectType.GetCustomAttributes<FlagsAttribute>().Any();

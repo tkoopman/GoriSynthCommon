@@ -4,15 +4,13 @@ using Newtonsoft.Json;
 
 using Noggog;
 
-using static Common.JsonConverters.PercentConverter;
-
 namespace Common.JsonConverters
 {
     /// <summary>
     ///     Converts a <see cref="Percent" /> from JSON. Percent can be represented as a double (0.0
     ///     to 1.0) or a string with a percent sign (e.g., "50%").
     /// </summary>
-    public class PercentConverter (WriteAs writeAs = WriteAs.String) : JsonConverter
+    public class PercentConverter : JsonConverter
     {
         /// <summary>
         ///     What JSON type to write the percentage as.
@@ -33,7 +31,7 @@ namespace Common.JsonConverters
         /// <summary>
         ///     What JSON type to write as.
         /// </summary>
-        public WriteAs WriteAsType { get; set; } = writeAs;
+        public WriteAs WriteAsType { get; set; } = WriteAs.String;
 
         /// <inheritdoc />
         public override bool CanConvert (Type objectType) => objectType == typeof(Percent);
