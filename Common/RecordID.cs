@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Records;
 
+using static Common.JsonConverters.FormKeyConverter;
+
 namespace Common
 {
     /// <summary>
@@ -114,6 +116,11 @@ namespace Common
         public string? Invalid => Type == IDType.Invalid ? RawID as string : throw new InvalidOperationException("Cannot access Invalid on a non-Invalid RecordID.");
 
         /// <summary>
+        ///     If RecordID was created from null. Type would be Invalid.
+        /// </summary>
+        public bool IsNull => RawID is null;
+
+        /// <summary>
         ///     If <see cref="Type" /> is <see cref="IDType.ModKey" />, returns the ModKey else
         ///     throws an InvalidOperationException.
         /// </summary>
@@ -210,15 +217,22 @@ namespace Common
         ///     Returns a string representation of the RecordID based on its type. Type itself is
         ///     not included in the string.
         /// </summary>
-        public override string ToString ()
+        public string ToString (Format formKeyFormat)
             => Type switch
             {
                 IDType.EditorID => EditorID,
-                IDType.FormID => $"0x{FormID}",
-                IDType.FormKey => FormKey.ToString(),
+                IDType.FormID => $"0x{FormID.Raw:X8}",
+                IDType.FormKey => FormKey.ToString(formKeyFormat),
                 IDType.ModKey => ModKey.ToString(),
                 IDType.Invalid => Invalid ?? string.Empty,
                 _ => throw new InvalidOperationException("Unknown RecordID type."),
             };
+
+        /// <summary>
+        ///     Returns a string representation of the RecordID based on its type. Type itself is
+        ///     not included in the string.
+        /// </summary>
+        public override string ToString ()
+            => ToString(Format.Default);
     }
 }

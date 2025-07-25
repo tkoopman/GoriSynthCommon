@@ -1,4 +1,6 @@
-﻿using Common;
+﻿using System.Collections;
+
+using Common;
 
 namespace CommonTests
 {
@@ -17,6 +19,14 @@ namespace CommonTests
 
             Assert.Equal(expectedAdded, added);
             Assert.Equal(expected, list);
+        }
+
+        [Theory]
+        [ClassData(typeof(Data_IsNullable))]
+        public void Test_IsNullable (Type type, bool expected)
+        {
+            bool isNullable = type.IsNullable();
+            Assert.Equal(expected, isNullable);
         }
 
         [Theory]
@@ -59,6 +69,20 @@ namespace CommonTests
         {
             string words = input.SeparateWords();
             Assert.Equal(expected, words);
+        }
+
+        private class Data_IsNullable : IEnumerable<object[]>
+        {
+            public IEnumerator<object[]> GetEnumerator ()
+            {
+                yield return new object[] { typeof(int), false };
+                yield return new object[] { typeof(int?), true };
+                yield return new object[] { typeof(string), false };
+                yield return new object[] { typeof(List<int>), false };
+                yield return new object[] { typeof(List<int?>), false };
+            }
+
+            IEnumerator IEnumerable.GetEnumerator () => GetEnumerator();
         }
     }
 }

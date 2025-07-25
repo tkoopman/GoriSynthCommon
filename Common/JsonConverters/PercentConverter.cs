@@ -4,16 +4,36 @@ using Newtonsoft.Json;
 
 using Noggog;
 
+using static Common.JsonConverters.PercentConverter;
+
 namespace Common.JsonConverters
 {
     /// <summary>
     ///     Converts a <see cref="Percent" /> from JSON. Percent can be represented as a double (0.0
     ///     to 1.0) or a string with a percent sign (e.g., "50%").
     /// </summary>
-    public class PercentConverter : JsonConverter
+    public class PercentConverter (WriteAs writeAs = WriteAs.String) : JsonConverter
     {
-        /// <inheritdoc />
-        public override bool CanWrite => false;
+        /// <summary>
+        ///     What JSON type to write the percentage as.
+        /// </summary>
+        public enum WriteAs
+        {
+            /// <summary>
+            ///     #%
+            /// </summary>
+            String,
+
+            /// <summary>
+            ///     0.0 to 1.0 as a float.
+            /// </summary>
+            Float,
+        }
+
+        /// <summary>
+        ///     What JSON type to write as.
+        /// </summary>
+        public WriteAs WriteAsType { get; set; } = writeAs;
 
         /// <inheritdoc />
         public override bool CanConvert (Type objectType) => objectType == typeof(Percent);
@@ -25,14 +45,10 @@ namespace Common.JsonConverters
             {
                 case JsonToken.Integer:
                 case JsonToken.Float:
-
-                    //double p = reader.ReadAsDouble() ?? throw new JsonSerializationException("Unable to read percent");
-                    double p = (double)(reader.Value ?? throw new JsonSerializationException("Unable to read percent"));
+                    double p = Convert.ToDouble(reader.Value ?? throw new JsonSerializationException("Unable to read percent"));
                     return new Percent(p);
 
                 case JsonToken.String:
-
-                    //string str = reader.ReadAsString() ?? throw new JsonSerializationException("Unable to read percent");
                     string str = (string)(reader.Value ?? throw new JsonSerializationException("Unable to read percent"));
                     bool signed = str.EndsWith('%');
                     double pd = double.Parse(str.TrimEnd('%'), CultureInfo.InvariantCulture);
@@ -46,6 +62,21 @@ namespace Common.JsonConverters
         }
 
         /// <inheritdoc />
-        public override void WriteJson (JsonWriter writer, object? value, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson (JsonWriter writer, object? value, JsonSerializer serializer)
+        {
+            if (value is not Percent percent)
+                throw new JsonSerializationException($"{value?.GetType().GetClassName() ?? "null"} is not of type Percent");
+
+            switch (WriteAsType)
+            {
+                case WriteAs.String:
+                    writer.WriteValue(percent.ToString("0.####"));
+                    break;
+
+                case WriteAs.Float:
+                    writer.WriteValue(percent.Value);
+                    break;
+            }
+        }
     }
 }

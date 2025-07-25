@@ -4,7 +4,7 @@ using Mutagen.Bethesda.Plugins;
 
 namespace CommonTests
 {
-    public class Test_RecordID
+    public class RecordIDTests
     {
         [Fact]
         public void Test_RecordID_EditorID ()

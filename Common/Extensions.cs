@@ -142,6 +142,12 @@ namespace Common
         }
 
         /// <summary>
+        ///     Prints class name in readable format even if generic type
+        /// </summary>
+        /// <returns>String of class name.</returns>
+        public static string GetClassName (this object? obj) => (obj?.GetType()).GetClassName();
+
+        /// <summary>
         ///     If type is generic, returns generic type definition, else returns input type
         /// </summary>
         public static Type GetIfGenericTypeDefinition (this Type type) => type.IsGenericType && !type.IsGenericTypeDefinition ? type.GetGenericTypeDefinition() : type;
@@ -159,7 +165,7 @@ namespace Common
         /// </summary>
         /// <param name="type">The type to check.</param>
         /// <returns>True if implements Nullable&lt;&gt;</returns>
-        public static bool IsNullable (this Type type) => type.GetIfGenericTypeDefinition() == typeof(Nullable<>);
+        public static bool IsNullable (this Type type) => Nullable.GetUnderlyingType(type) is not null;
 
         /// <summary>
         ///     Returns enumerable of lines in string, splitting on new line characters.
