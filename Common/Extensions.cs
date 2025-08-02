@@ -5,6 +5,8 @@ using DynamicData;
 
 using Newtonsoft.Json.Linq;
 
+using Noggog;
+
 namespace Common
 {
     /// <summary>
@@ -102,6 +104,80 @@ namespace Common
             var list = array.ToList();
             list.AddRange(values);
             return [.. list];
+        }
+
+        /// <summary>
+        ///     Add a value to a dictionary where each key contains list of values. Will create new
+        ///     list if key doesn't exist in dictionary yet.
+        /// </summary>
+        /// <typeparam name="TKey">Dictionary Key Type</typeparam>
+        /// <typeparam name="TValue">Dictionary Value Type</typeparam>
+        /// <param name="dictionary">Dictionary to add key value pair to</param>
+        /// <param name="key">Dictionary key to add value to.</param>
+        /// <param name="value">Value to add.</param>
+        public static void AddValue<TKey, TValue> (this IDictionary<TKey, List<TValue>> dictionary, TKey key, TValue value) where TKey : notnull
+        {
+            if (dictionary.TryGetValue(key, out var list))
+                list.Add(value);
+            else
+                dictionary.Add(key, [value]);
+        }
+
+        /// <summary>
+        ///     Add a value to a dictionary where each key contains HashSet of values. Will create
+        ///     new HashSet if key doesn't exist in dictionary yet.
+        /// </summary>
+        /// <typeparam name="TKey">Dictionary Key Type</typeparam>
+        /// <typeparam name="TValue">Dictionary Value Type</typeparam>
+        /// <param name="dictionary">Dictionary to add key value pair to</param>
+        /// <param name="key">Dictionary key to add value to.</param>
+        /// <param name="value">Value to add.</param>
+        /// <returns>
+        ///     True if value was added to existing HashSet or new HashSet created. False if HashSet
+        ///     for key already existed and contained value already.
+        /// </returns>
+        public static bool AddValue<TKey, TValue> (this IDictionary<TKey, HashSet<TValue>> dictionary, TKey key, TValue value) where TKey : notnull
+        {
+            if (dictionary.TryGetValue(key, out var list))
+                return list.Add(value);
+
+            dictionary.Add(key, [value]);
+            return true;
+        }
+
+        /// <summary>
+        ///     Add values to a dictionary where each key contains HashSet of values. Will create
+        ///     new HashSet if key doesn't exist in dictionary yet.
+        /// </summary>
+        /// <typeparam name="TKey">Dictionary Key Type</typeparam>
+        /// <typeparam name="TValue">Dictionary Value Type</typeparam>
+        /// <param name="dictionary">Dictionary to add key value pair to</param>
+        /// <param name="key">Dictionary key to add value to.</param>
+        /// <param name="values">Values to add.</param>
+
+        public static void AddValues<TKey, TValue> (this IDictionary<TKey, HashSet<TValue>> dictionary, TKey key, IEnumerable<TValue> values) where TKey : notnull
+        {
+            if (dictionary.TryGetValue(key, out var list))
+                list.Add(values);
+            else
+                dictionary.Add(key, [.. values]);
+        }
+
+        /// <summary>
+        ///     Add values to a dictionary where each key contains List of values. Will create new
+        ///     HashSet if key doesn't exist in dictionary yet.
+        /// </summary>
+        /// <typeparam name="TKey">Dictionary Key Type</typeparam>
+        /// <typeparam name="TValue">Dictionary Value Type</typeparam>
+        /// <param name="dictionary">Dictionary to add key value pair to</param>
+        /// <param name="key">Dictionary key to add value to.</param>
+        /// <param name="values">Values to add.</param>
+        public static void AddValues<TKey, TValue> (this IDictionary<TKey, List<TValue>> dictionary, TKey key, IEnumerable<TValue> values) where TKey : notnull
+        {
+            if (dictionary.TryGetValue(key, out var list))
+                list.Add(values);
+            else
+                dictionary.Add(key, [.. values]);
         }
 
         /// <summary>
@@ -314,6 +390,12 @@ namespace Common
 
             return list;
         }
+
+        /// <summary>
+        ///     Is field enabled in equal options. If field has multiple flags set, only 1 has to
+        ///     match for this to return true.
+        /// </summary>
+        internal static bool fieldEnabled (this RecordID.EqualsOptions equalOptions, RecordID.Field field) => ((RecordID.EqualsOptions)field & equalOptions) > 0;
 
         private static Type[] doExplode (Type type, int maxDepth, int depth)
         {

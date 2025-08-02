@@ -47,7 +47,7 @@ namespace CommonTests.JsonConverters
 
                 yield return new object?[]
                 {   // Not valid FormID as missing leading 00 but could be EditorID
-                    @"""0x123456""", new List<RecordID> { new(IDType.EditorID, "0x123456") }, new List<string>() { @"""0x123456""", @"""0x123456""" },
+                    @"""0x123456""", new List<RecordID> { new(IDType.Name, "0x123456") }, new List<string>() { @"""0x123456""", @"""0x123456""" },
                 };
 
                 yield return new object?[]

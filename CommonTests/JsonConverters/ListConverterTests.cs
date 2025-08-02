@@ -17,6 +17,7 @@ namespace CommonTests.JsonConverters
             typeof(List<string>),
             typeof(string[]),
             typeof(ICollection<string>),
+            typeof(HashSet<string>),
             ];
 
         private readonly Type[] TypesNullable =
@@ -24,6 +25,7 @@ namespace CommonTests.JsonConverters
             typeof(List<string?>),
             typeof(string?[]),
             typeof(ICollection<string?>),
+            typeof(HashSet<string>),
             ];
 
         [Theory]

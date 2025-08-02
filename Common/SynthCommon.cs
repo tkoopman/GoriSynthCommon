@@ -9,6 +9,8 @@ using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Cache;
 using Mutagen.Bethesda.Plugins.Records;
 
+using Noggog;
+
 namespace Common
 {
     /// <summary>
@@ -50,16 +52,19 @@ namespace Common
         /// </returns>
         public static RecordID ConvertToBethesdaID (string? input, FormIDToFormKeyConverter? convertToFormKey, char[]? allowedPrefixes, out char? prefix)
         {
-            if (input is null)
+            if (input.IsNullOrWhitespace())
             {
                 prefix = null;
-                return new RecordID();
+                return new RecordID(IDType.Invalid, input);
             }
+
+            bool isWildcard = false;
 
             if (allowedPrefixes != null && allowedPrefixes.Contains(input[0]))
             {
                 prefix = input[0];
                 input = input[1..];
+                isWildcard = prefix == '*';
             }
             else
             {
@@ -92,12 +97,18 @@ namespace Common
                 return (RecordID)formID;
             }
 
-            return
-                ModKey.TryFromNameAndExtension(input, out modKey)
-                    ? (RecordID)modKey
-                    : input.IsValidEditorID(true)
-                        ? new RecordID(input)
-                        : new RecordID(IDType.Invalid, input);
+            if (ModKey.TryFromNameAndExtension(input, out modKey))
+                return (RecordID)modKey;
+
+            if (!isWildcard && input[0] == '*')
+            {
+                input = input[1..];
+                isWildcard = true;
+            }
+
+            return input.IsValidEditorID(true)
+                ? new RecordID(input, isWildcard)
+                : new RecordID(IDType.Invalid, input);
         }
 
         /// <summary>
@@ -127,16 +138,8 @@ namespace Common
         /// <summary>
         ///     Checks that string meets the requirements for a valid EditorID
         /// </summary>
-        public static bool IsValidEditorID (this string? editorID, bool allowSomeBadChars = false, char[]? allowedPrefixes = null)
-        {
-            if (string.IsNullOrEmpty(editorID))
-                return false;
-
-            if (allowedPrefixes != null && allowedPrefixes.Contains(editorID[0]))
-                editorID = editorID[1..];
-
-            return allowSomeBadChars ? EditorIDAcceptable().IsMatch(editorID) : EditorIDValid().IsMatch(editorID);
-        }
+        public static bool IsValidEditorID (this string? editorID, bool allowSomeBadChars = false)
+            => !string.IsNullOrEmpty(editorID) && (allowSomeBadChars ? EditorIDAcceptable().IsMatch(editorID) : EditorIDValid().IsMatch(editorID));
 
         /// <inheritdoc cref="TryConvertToBethesdaID(string?, char[], out FormID, out FormKey, out string, out char?)" />
         [Obsolete("Use TryConvertToBethesdaID with RecordID instead.")]
@@ -208,11 +211,11 @@ namespace Common
                     editorID = null!;
                     return IDType.ModKey;
 
-                case IDType.EditorID:
+                case IDType.Name:
                     formID = FormID.Null;
                     formKey = FormKey.Null;
-                    editorID = id.EditorID;
-                    return IDType.EditorID;
+                    editorID = id.Name;
+                    return IDType.Name;
 
                 default:
                     formID = FormID.Null;
@@ -238,7 +241,7 @@ namespace Common
             return TryConvertToBethesdaID(id, out var recordID) switch
             {
                 IDType.FormKey => linkCache.TryResolve<T>(recordID.FormKey, out record),
-                IDType.EditorID => linkCache.TryResolve<T>(recordID.EditorID, out record),
+                IDType.Name => linkCache.TryResolve<T>(recordID.Name, out record),
                 _ => false,
             };
         }
@@ -262,7 +265,7 @@ namespace Common
             return TryConvertToBethesdaID(id, out var recordID) switch
             {
                 IDType.FormKey => linkCache.TryResolveContext(recordID.FormKey, out record),
-                IDType.EditorID => linkCache.TryResolveContext(recordID.EditorID, out record),
+                IDType.Name => linkCache.TryResolveContext(recordID.Name, out record),
                 _ => false,
             };
         }
@@ -290,7 +293,7 @@ namespace Common
         ///     Going by https://en.uesp.net/wiki/Skyrim_Mod:SkyEdit/User_Interface/Common_Fields
         ///     should not include space or underscores, but seems to be used sometimes.
         /// </summary>
-        [GeneratedRegex(@"^[a-zA-Z0-9_ ]+$")]
+        [GeneratedRegex(@"^[a-zA-Z0-9_\[\]()][^+,*\\|:""<>?\/\x00-\x1F]*$")]
         private static partial Regex EditorIDAcceptable ();
 
         [GeneratedRegex(@"^[a-zA-Z0-9]+$")]

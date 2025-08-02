@@ -21,12 +21,12 @@ namespace Common.JsonConverters
             /// <summary>
             ///     Write empty list as null.
             /// </summary>
-            EmptyListAsNull = 1,
+            EmptyListAsNull = 1 << 0,
 
             /// <summary>
             ///     Write single item list as value instead of array.
             /// </summary>
-            SingleItemAsValue = 2
+            SingleItemAsValue = 1 << 1
         }
     }
 
@@ -43,18 +43,19 @@ namespace Common.JsonConverters
         public ListConverter.WriteAsOption WriteAsOptions { get; set; } = ListConverter.WriteAsOption.Default;
 
         /// <inheritdoc />
-        public override bool CanConvert (Type objectType) => objectType == typeof(List<T>) || objectType == typeof(T[]) || objectType.IsAssignableFrom(typeof(List<T>));
+        public override bool CanConvert (Type objectType) => objectType == typeof(List<T>) || objectType == typeof(HashSet<T>) || objectType == typeof(T[]) || objectType.IsAssignableFrom(typeof(List<T>)) || objectType.IsAssignableFrom(typeof(HashSet<T>));
 
         /// <inheritdoc />
         public override object? ReadJson (JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
+            ICollection<T> value = objectType.IsAssignableFrom(typeof(HashSet<T>)) ? new HashSet<T>() : new List<T>();
+
             switch (reader.TokenType)
             {
                 case JsonToken.Null:
-                    return objectType.IsArray ? Array.Empty<T>() : new List<T>();
+                    break;
 
                 case JsonToken.StartArray:
-                    List<T> value = [];
                     while (reader.Read() && reader.TokenType != JsonToken.EndArray)
                     {
                         if (reader.TokenType == JsonToken.Null)
@@ -66,19 +67,23 @@ namespace Common.JsonConverters
                         value.Add(serializer.Deserialize<T>(reader) ?? throw new JsonSerializationException("Unable to parse object."));
                     }
 
-                    return objectType.IsArray ? value.ToArray() : value;
+                    break;
 
                 case JsonToken.StartObject:
-                    var item = serializer.Deserialize<T>(reader) ?? throw new JsonSerializationException("Unable to parse object.");
-                    return objectType.IsArray ? new[] { item } : new List<T> { item };
+                    value.Add(serializer.Deserialize<T>(reader) ?? throw new JsonSerializationException("Unable to parse object."));
+                    break;
 
                 case JsonToken.String:
-                    var singleItem = serializer.Deserialize<T>(reader) ?? throw new JsonSerializationException("Unable to parse object.");
-                    return objectType.IsArray ? new[] { singleItem } : new List<T> { singleItem };
+                    value.Add(serializer.Deserialize<T>(reader) ?? throw new JsonSerializationException("Unable to parse object."));
+                    break;
 
                 default:
                     throw new JsonSerializationException($"Invalid Json object - {reader.TokenType}");
             }
+
+#pragma warning disable IDE0305 // Simplify collection initialization
+            return objectType.IsArray ? value.ToArray() : value;
+#pragma warning restore IDE0305 // Simplify collection initialization
         }
 
         /// <inheritdoc />

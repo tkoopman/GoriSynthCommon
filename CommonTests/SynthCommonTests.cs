@@ -41,11 +41,19 @@ namespace CommonTests
             {
                 yield return new object?[]
                 {   // convertFormID returns FormKey.Null so just keeps as FormID
+                    "", null, new RecordID(IDType.Invalid, ""), null
+                };
+                yield return new object?[]
+                {   // convertFormID returns FormKey.Null so just keeps as FormID
+                    null, null, new RecordID(IDType.Invalid, null), null
+                };
+                yield return new object?[]
+                {   // convertFormID returns FormKey.Null so just keeps as FormID
                     "0A000001", null, new RecordID(new FormID(0xA000001)), null
                 };
                 yield return new object?[]
                 {   // When providing a FormID must include all leading 0's else won't be detected as FormID but technically could be EditorID
-                    "0x1", null, new RecordID(IDType.EditorID, "0x1"), null
+                    "0x1", null, new RecordID(IDType.Name, "0x1"), null
                 };
                 yield return new object?[]
                 {   // Will be converted from FormID to FormKey by convertFormID
@@ -85,19 +93,19 @@ namespace CommonTests
                 };
                 yield return new object?[]
                 {
-                    "AEditorID", null, new RecordID(IDType.EditorID, "AEditorID"), null
+                    "AEditorID", null, new RecordID(IDType.Name, "AEditorID"), null
                 };
                 yield return new object?[]
                 {
-                    "AEditorID", (char[])['!','-','+','^','*'], new RecordID(IDType.EditorID, "AEditorID"), null
+                    "AEditorID", (char[])['!','-','+','^','*'], new RecordID(IDType.Name, "AEditorID"), null
                 };
                 yield return new object?[]
                 {
-                    "-AEditorID", (char[])['!','-','+','^','*'], new RecordID(IDType.EditorID, "AEditorID"), '-'
+                    "-AEditorID", (char[])['!','-','+','^','*'], new RecordID(IDType.Name, "AEditorID"), '-'
                 };
                 yield return new object?[]
                 {
-                    "*AEditorID", (char[])['!','-','+','^','*'], new RecordID(IDType.EditorID, "AEditorID"), '*'
+                    "*AEditorID", (char[])['!','-','+','^','*'], new RecordID(IDType.Name, "AEditorID"), '*'
                 };
                 yield return new object?[]
                 {   // Prefixes are typically not part of the allowed characters for EditorIDs

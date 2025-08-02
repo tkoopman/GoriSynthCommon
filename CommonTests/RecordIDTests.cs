@@ -7,11 +7,18 @@ namespace CommonTests
     public class RecordIDTests
     {
         [Fact]
+        public void Test_EqualsOptions ()
+        {
+            var d = default(RecordID.EqualsOptions);
+            Assert.Equal((RecordID.EqualsOptions)0, d);
+        }
+
+        [Fact]
         public void Test_RecordID_EditorID ()
         {
             var recordID = new RecordID("TestRecord");
             string str = recordID;
-            Assert.Equal(IDType.EditorID, recordID.Type);
+            Assert.Equal(IDType.Name, recordID.Type);
             Assert.Equal("TestRecord", str);
         }
 

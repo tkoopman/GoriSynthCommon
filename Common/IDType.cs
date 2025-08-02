@@ -30,6 +30,6 @@
         /// <summary>
         ///     Value provided was a valid EditorID.
         /// </summary>
-        EditorID = 1 << 2,
+        Name = 1 << 2,
     }
 }
